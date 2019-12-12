@@ -59,6 +59,8 @@ public class UserTest {
         user.setName("Andy Hou");
         user.setPassword("password");
         user.setRole(Role.Admin);
+        
+        int a=20;
 
         assertTrue(user.create());
         assertFalse(user.create());
