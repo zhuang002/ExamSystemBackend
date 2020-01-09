@@ -21,6 +21,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import java.sql.*;
 
 /**
  *
@@ -41,10 +42,26 @@ public class UserTest {
 
     @Before
     public void setUp() {
+        Connection conn=null;
+        PreparedStatement statement=null;
+        try {
+            conn=Utility.getConnection();
+            statement = conn.prepareStatement("delete from user");
+            statement.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("User test setup error");
+        } finally {
+            try {
+            if (statement!=null) statement.close();
+            if (conn!=null) conn.close();
+            } catch (Exception e) {
+            }
+        }
     }
 
     @After
     public void tearDown() {
+        
     }
 
     // TODO add test methods here.
@@ -60,7 +77,7 @@ public class UserTest {
         user.setPassword("password");
         user.setRole(Role.Admin);
         
-        int a=20;
+
 
         assertTrue(user.create());
         assertFalse(user.create());
@@ -83,6 +100,7 @@ public class UserTest {
         user.remove();
         user = User.getUserByUsername("andy001");
         assertNull(user);
+        
 
     }
 
@@ -107,7 +125,7 @@ public class UserTest {
          assertEquals(user.getName(), "Andy Hou"); 
          assertEquals(user.getRole(), Role.Admin);
          
-        
+        user.remove();
         
     }
 }

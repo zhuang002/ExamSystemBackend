@@ -5,36 +5,38 @@
  */
 package com.ExamSys.backend;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Date;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import java.util.Date;
-import java.util.Calendar;
-import java.text.SimpleDateFormat;
+
 /**
  *
  * @author Andy
  */
-public class ExamTest {
-
-    public ExamTest() {
+public class ReportTest {
+    
+    public ReportTest() {
     }
-
+    
     @BeforeClass
     public static void setUpClass() {
     }
-
+    
     @AfterClass
     public static void tearDownClass() {
     }
-
+    
     @Before
     public void setUp() {
+        
         Connection conn=null;
         PreparedStatement statement=null;
         try {
@@ -53,8 +55,19 @@ public class ExamTest {
             
             statement = conn.prepareStatement("delete from exam");
             statement.executeUpdate();
+            statement.close();
             
+            statement = conn.prepareStatement("delete from user");
+            statement.executeUpdate();
+            statement.close();
             
+            statement = conn.prepareStatement("delete from reportscore");
+            statement.executeUpdate();
+            statement.close();
+            
+            statement = conn.prepareStatement("delete from report");
+            statement.executeUpdate();
+               
         } catch (Exception e) {
             System.out.println("User test setup error");
         } finally {
@@ -65,7 +78,7 @@ public class ExamTest {
             }
         }
     }
-
+    
     @After
     public void tearDown() {
     }
@@ -75,8 +88,52 @@ public class ExamTest {
     //
     // @Test
     // public void hello() {}
+    
     @Test
-    public void test_Exam_crm() {
+    public void test_report_cmr() {
+        ArrayList<Exam> exams=createExams();
+        ArrayList<User> users=createUsers();
+        
+        Report report=new Report();
+        report.setDate(new Date());
+        report.setExam(exams.get(0));
+        report.setStudent(users.get(0));
+        
+        report.getScoreList().add(2);
+        report.getScoreList().add(3);
+        
+        assertTrue(report.create());
+        
+        Report report2=new Report();
+        assertTrue(report2.get(report.getID()));
+        assertEquals(report.getDate(), report2.getDate());
+        assertEquals(report2.getExam().getID(), exams.get(0).getID());
+        assertEquals(report2.getStudent().getUserName(), users.get(0).getUserName());
+        
+        assertEquals(report2.getScore(), 5);
+        int score=report2.getScoreList().get(0);
+        assertEquals(score, 2);
+        score=report2.getScoreList().get(1);
+        assertEquals(score, 3);
+        
+        Exam exam1=exams.get(0);
+        Exam exam2=report2.getExam();
+        assertEquals(exam1.getDateTime(),exam2.getDateTime());
+        assertEquals(exam1.getProblems().size(), exam2.getProblems().size());
+        assertEquals(exam1.getProblems().get(0).getName(),exam2.getProblems().get(0).getName());
+        
+        User user1=users.get(0);
+        User user2=report.getStudent();
+        assertEquals(user1.getUserName(), user2.getUserName());
+        assertEquals(user1.getRole(), user2.getRole());
+        assertEquals(user1.getName(), user2.getName());
+
+        
+    }
+
+    private ArrayList<Exam> createExams() {
+        ArrayList<Exam> ret=new ArrayList();
+        
         Exam exam1= new Exam();
         
         Date date=new Date();
@@ -118,38 +175,26 @@ public class ExamTest {
         
         exam1.getProblems().add(problem2);
         
-        assertTrue(exam1.create());
+        exam1.create();
         
+        ret.add(exam1);
+        return ret;
         
-        Exam exam2=new Exam();
-        assertTrue(exam2.get(exam1.getID()));
-        assertEquals(exam1.getID(),exam2.getID());
-        assertEquals(exam1.getDescription(),exam2.getDescription());
-        assertEquals(exam1.getDateTime(),exam2.getDateTime());
-        assertEquals(exam1.getTimeLimit().getSeconds(),exam2.getTimeLimit().getSeconds());
+    }
+
+    private ArrayList<User> createUsers() {
+        ArrayList<User> ret=new ArrayList();
         
-        assertEquals(exam2.getProblems().size(),2);
-        assertEquals(exam2.getProblems().get(0).getSections().size(), 2);
-        assertEquals(exam2.getProblems().get(1).name,"problem 2");
-        assertEquals(exam2.getProblems().get(1).getSections().get(0).getText(),"ps 2.1");
+        User user=new User();
+        user.setName("Andy Hou");
+        user.setPassword("password");
+        user.setRole(Role.Student);
+        user.setUserName("andy001");
+        user.create();
         
-        try {
-            exam1.setDateTime(new SimpleDateFormat("dd/MM/yyyy").parse("01/01/2000"));
-        } catch (Exception e) {
-            System.out.println("Should not be here.");
-        }
-        exam1.problems.remove(0);
-        exam1.update();
-        
-        exam2.get(exam1.getID());
-        assertEquals(exam1.getDateTime(),exam2.getDateTime());
-        assertEquals(exam2.getProblems().size(),1);
-        assertEquals(exam2.getProblems().get(0).name, "problem 2");
-        
-        
-        exam2.remove();
-        assertFalse(exam2.get(exam1.getID()));
+        ret.add(user);
+        return ret;
     }
     
-   
+    
 }
