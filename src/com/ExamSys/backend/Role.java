@@ -15,6 +15,7 @@ public enum Role {
     Student(2);
    
     private final int value;
+    
     private Role(int num){
         this.value=num;
     }
@@ -22,4 +23,5 @@ public enum Role {
     public int getValue(){
         return this.value;
     }
+
 }

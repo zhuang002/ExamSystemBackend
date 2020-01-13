@@ -57,15 +57,11 @@ public class User implements IDBRecord{
     }
 
     public boolean create() {
-        MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+       
         Connection conn = null;
         PreparedStatement statement = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             statement = conn.prepareStatement("Insert into User (username,password,name,role) Values(?,?,?,?)");
             statement.setString(1, this.username);
             statement.setString(2, this.password);
@@ -93,15 +89,11 @@ public class User implements IDBRecord{
     }
 
     public boolean update() {
-        MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+      
         Connection conn = null;
         PreparedStatement statement = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             statement = conn.prepareStatement("Update User Set name=?,role=? Where username=?");
             statement.setString(1, this.name);
             statement.setInt(2, this.role.getValue());
@@ -133,15 +125,11 @@ public class User implements IDBRecord{
     }
 
     public static boolean remove(String username) {
-        MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+       
         Connection conn = null;
         PreparedStatement statement = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             statement = conn.prepareStatement("Delete From User Where username=? ");
             statement.setString(1, username);
             statement.executeUpdate();
@@ -167,16 +155,12 @@ public class User implements IDBRecord{
 
     public static User getUserByUsername(String username) {
         User user = new User();
-        MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+       
         Connection conn = null;
         PreparedStatement statement = null;
         ResultSet rs = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             statement = conn.prepareStatement("Select name,role,password From user Where username=? ");
             statement.setString(1, username);
             rs = statement.executeQuery();
@@ -212,16 +196,12 @@ public class User implements IDBRecord{
 
     public static List<User> getAllUsers(Role role) {
         ArrayList<User> arrayList = new ArrayList<User>();
-        MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+       
         Connection conn = null;
         PreparedStatement statement = null;
         ResultSet rs = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             statement = conn.prepareStatement("Select username,name,role From user ");
 
             rs = statement.executeQuery();
@@ -273,6 +253,23 @@ public class User implements IDBRecord{
         }
         
         return null;
+    }
+    
+    public static boolean isTested(int examID,User user){
+       List<Report> reportList=Report.getReportsByStudentName(user.getUserName());
+       Report report=null;
+       for(int i=0;i<reportList.size();i++){
+           if(reportList.get(i).getExam().getID()==examID){
+               report=reportList.get(i);
+               break;
+           }
+       }
+       if(report==null||report.getScore()==0){
+           return false;
+       }
+       else{
+       return false;
+       }
     }
     
 }

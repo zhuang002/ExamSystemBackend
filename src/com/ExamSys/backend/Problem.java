@@ -9,10 +9,7 @@ import com.mysql.cj.jdbc.Blob;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,10 +26,22 @@ import javax.imageio.ImageIO;
  * @author Andy
  */
 public class Problem implements IDBRecord{
+
+    public static List<Problem> getAllProblems() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     int ID;
     char answer;
+    String name;
     List<ProblemSection> sections=new ArrayList();
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
     
     
     public int getID() {
@@ -50,25 +59,23 @@ public class Problem implements IDBRecord{
     public List<ProblemSection> getSections() {
         return sections;
     }
+    
+   
 
     
     
     @Override
     public boolean create() {
         
-         MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+       
         Connection conn = null;
         PreparedStatement statement = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             conn.setAutoCommit(false);
-            statement = conn.prepareStatement("Insert into problem ( answer ) Values(?)");
-            statement.setInt(1, this.answer);
-           
+            statement = conn.prepareStatement("Insert into problem ( name, answer ) Values(?,?)",PreparedStatement.RETURN_GENERATED_KEYS);
+            statement.setString(1, name);
+            statement.setInt(2, this.answer);
             
             statement.executeUpdate(); 
             ResultSet rs=statement.getGeneratedKeys();
@@ -79,7 +86,7 @@ public class Problem implements IDBRecord{
             
             for(int i=0;i<this.sections.size();i++){
                ProblemSection problemSection =this.sections.get(i);
-                statement=conn.prepareStatement("Insert into problemsection (problemid, index,text ,picpath ) Values(?,?,?,?)");
+                statement=conn.prepareStatement("Insert into problemsection (problemid, sectionindex,text ,picpath) Values(?,?,?,?)");
                 statement.setInt(1, this.ID);
                 statement.setInt(2, i);
                 statement.setString(3, problemSection.text);
@@ -138,20 +145,17 @@ public class Problem implements IDBRecord{
     @Override
     public boolean update() {
         
-          MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+         
         Connection conn = null;
         PreparedStatement statement = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             conn.setAutoCommit(false);
             
-             statement = conn.prepareStatement("update problem set answer=? where id=?");
+             statement = conn.prepareStatement("update problem set answer=?, name=? where id=?");
             statement.setInt(1, this.answer);
-            statement.setInt(2, this.ID);
+            statement.setString(2, name);
+            statement.setInt(3, this.ID);
             statement.executeUpdate();
             statement.close();
             
@@ -161,7 +165,7 @@ public class Problem implements IDBRecord{
             
              for(int i=0;i<this.sections.size();i++){
                ProblemSection problemSection =this.sections.get(i);
-                statement=conn.prepareStatement("Insert into problemsection (problemid, index,text ,picpath ) Values(?,?,?,?)");
+                statement=conn.prepareStatement("Replace into problemsection (problemid, sectionindex,text ,picpath ) Values(?,?,?,?)");
                 statement.setInt(1, this.ID);
                 statement.setInt(2, i);
                 statement.setString(3, problemSection.text);
@@ -221,25 +225,21 @@ public class Problem implements IDBRecord{
     }
 
     public static boolean remove(int id){
-         MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+       
         Connection conn = null;
         PreparedStatement statement = null;
         try {
-            conn = ds.getConnection();
+            conn = Utility.getConnection();
             conn.setAutoCommit(false);
             
-             statement = conn.prepareStatement("delete problem where id=?");
+             statement = conn.prepareStatement("delete from problem where id=?");
             statement.setInt(1, id);
             
             statement.executeUpdate();
             statement.close();
             
             
-            statement=conn.prepareStatement("delete problemsection where examid=?");
+            statement=conn.prepareStatement("delete from problemsection where problemid=?");
             statement.setInt(1, id);
             
              statement.executeUpdate();
@@ -281,33 +281,31 @@ public class Problem implements IDBRecord{
 
     @Override
     public boolean get(int id) {        
-         MysqlDataSource ds = new MysqlDataSource();
-        Properties properties = new Properties();
-        ds.setURL("jdbc:mysql://localhost:3306/examsystem");
-        ds.setUser("root");
-        ds.setPassword("admin");
+     
         Connection conn = null;
         PreparedStatement statement = null;
         ResultSet rs = null;
         try {
-            conn = ds.getConnection();
-            statement = conn.prepareStatement("Select answer from problem where id =?");
+            conn = Utility.getConnection();
+            statement = conn.prepareStatement("Select answer,name from problem where id =?");
             statement.setInt(1, id);
             rs = statement.executeQuery();
 
             if (rs.next()) {
                 this.ID=id;
-                this.answer=(char)rs.getInt("answer");
+                this.answer=(char)rs.getByte("answer");
+                this.name=rs.getString("name");
+                List sectionList=this.sections;
+                sectionList.clear();
+                sectionList.addAll(getSectionsOfProblem(id, conn));   
                 
-            }
+            } else return false;
             statement.close();
             
             
 
             
-            List sectionList=this.sections;
-            sectionList.clear();
-            sectionList.addAll(getSectionsOfProblem(id, conn));            
+                     
         } catch (SQLException e) {
             System.out.println("create user error");
             System.out.println(e.getMessage());
@@ -330,7 +328,7 @@ public class Problem implements IDBRecord{
     }
 
     private Collection getSectionsOfProblem(int id, Connection conn) throws SQLException {
-        PreparedStatement statement=conn.prepareStatement("Select text, picpath  from problemsection Where id=? order by index");
+        PreparedStatement statement=conn.prepareStatement("Select text, picpath  from problemsection Where problemid=? order by sectionindex");
               statement.setInt(1, id);
             ResultSet rs = statement.executeQuery();
             
@@ -348,10 +346,8 @@ public class Problem implements IDBRecord{
                         System.err.println("Cannot read image file  ");
                         section.pic=null;
                     }
-                    
-                    
-                      
                 }
+                sectionList.add(section);
             }
             return sectionList;
 
@@ -370,7 +366,10 @@ public class Problem implements IDBRecord{
     }
 
     
-
+    @Override
+    public String toString() {
+        return this.name;
+    }
     
     
     
