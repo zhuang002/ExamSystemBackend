@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/*import com.ExamSys.backend.Role;
+ /*import com.ExamSys.backend.Role;
 import com.ExamSys.backend.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;*/
-
 package com.ExamSys.backend;
 
 import org.junit.After;
@@ -22,6 +21,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import java.sql.*;
+import java.util.List;
 
 /**
  *
@@ -42,18 +42,22 @@ public class UserTest {
 
     @Before
     public void setUp() {
-        Connection conn=null;
-        PreparedStatement statement=null;
+        Connection conn = null;
+        PreparedStatement statement = null;
         try {
-            conn=Utility.getConnection();
+            conn = Utility.getConnection();
             statement = conn.prepareStatement("delete from user");
             statement.executeUpdate();
         } catch (Exception e) {
             System.out.println("User test setup error");
         } finally {
             try {
-            if (statement!=null) statement.close();
-            if (conn!=null) conn.close();
+                if (statement != null) {
+                    statement.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
             } catch (Exception e) {
             }
         }
@@ -61,7 +65,7 @@ public class UserTest {
 
     @After
     public void tearDown() {
-        
+
     }
 
     // TODO add test methods here.
@@ -76,13 +80,9 @@ public class UserTest {
         user.setName("Andy Hou");
         user.setPassword("password");
         user.setRole(Role.Admin);
-        
-
 
         assertTrue(user.create());
         assertFalse(user.create());
-        
-        
 
         user = User.getUserByUsername("andy002");
         assertNull(user);
@@ -97,10 +97,28 @@ public class UserTest {
         user = User.getUserByUsername("andy001");
         assertEquals(user.getRole(), Role.Student);
 
+        User user2 = new User();
+        user2.setUserName("andy002");
+        user2.setName("Andy Hou Admin");
+        user2.setPassword("password");
+        user2.setRole(Role.Admin);
+        user2.create();
+
+        User user3 = new User();
+        user3.setUserName("andy003");
+        user3.setName("Andy Hou Admin2");
+        user3.setPassword("password");
+        user3.setRole(Role.Admin);
+        user3.create();
+
+        List<User> list = User.getAllUsers(Role.Admin);
+        assertEquals(list.size(), 2);
+        assertEquals(user2.getName(), list.get(0).getName());
+        assertEquals(user3.getName(), list.get(1).getName());
+
         user.remove();
         user = User.getUserByUsername("andy001");
         assertNull(user);
-        
 
     }
 
@@ -118,14 +136,14 @@ public class UserTest {
 
         user = User.login("andy002", "password");
         assertNull(user);
-        
-         user = User.login("andy001", "password");
+
+        user = User.login("andy001", "password");
         assertNotNull(user);
         assertEquals(user.getUserName(), "andy001");
-         assertEquals(user.getName(), "Andy Hou"); 
-         assertEquals(user.getRole(), Role.Admin);
-         
+        assertEquals(user.getName(), "Andy Hou");
+        assertEquals(user.getRole(), Role.Admin);
+
         user.remove();
-        
+
     }
 }

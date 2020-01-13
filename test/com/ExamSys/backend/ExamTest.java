@@ -16,6 +16,7 @@ import static org.junit.Assert.*;
 import java.util.Date;
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
+import java.util.List;
 /**
  *
  * @author Andy
@@ -121,7 +122,66 @@ public class ExamTest {
         assertTrue(exam1.create());
         
         
-        Exam exam2=new Exam();
+        Exam exam2= new Exam();
+        
+        date=new Date();
+        exam2.setDateTime(date);
+        exam2.setDescription("Exam 1");
+        exam2.setTimeLimit(Duration.ofHours(1));
+        
+        problem1=new Problem();
+        problem1.setAnswer('c');
+        problem1.setName("problem 3");
+        
+        section1=new ProblemSection();
+        section1.setText("ps 3.1");
+        
+        section2=new ProblemSection();
+        section2.setText("ps 3.2");
+        
+        problem1.getSections().add(section1);
+        problem1.getSections().add(section2);
+        problem1.create();
+        
+        exam2.getProblems().add(problem1);
+        
+        
+        problem2=new Problem();
+        problem2.setAnswer('d');
+        problem2.setName("problem 4");
+        
+        
+        section3=new ProblemSection();
+        section3.setText("ps 4.1");
+        
+        section4=new ProblemSection();
+        section4.setText("ps 4.2");
+        
+        problem2.getSections().add(section3);
+        problem2.getSections().add(section4);
+        problem2.create();
+        
+        exam2.getProblems().add(problem2);
+        
+        exam2.create();
+        
+        List<Exam> list = Exam.getAllExams();
+        assertEquals(list.size(), 2);
+        assertEquals(list.get(0).getDescription(),exam2.getDescription());
+        assertEquals(list.get(1).getDescription(),exam1.getDescription());
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        exam2=new Exam();
         assertTrue(exam2.get(exam1.getID()));
         assertEquals(exam1.getID(),exam2.getID());
         assertEquals(exam1.getDescription(),exam2.getDescription());

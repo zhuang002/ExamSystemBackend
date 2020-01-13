@@ -28,7 +28,47 @@ import javax.imageio.ImageIO;
 public class Problem implements IDBRecord{
 
     public static List<Problem> getAllProblems() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ArrayList<Problem> arrayList = new ArrayList<Problem>();
+       
+        Connection conn = null;
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            conn = Utility.getConnection();
+            statement = conn.prepareStatement("Select id, answer, name  From problem order by id ");
+
+            rs = statement.executeQuery();
+
+            while(rs.next())
+            {
+               Problem problem = new Problem();
+              problem.ID=rs.getInt("id");
+                problem.answer=(char)rs.getByte("answer");
+               problem.name=rs.getString("name");
+                List sectionList=problem.sections;
+                sectionList.clear();
+                sectionList.addAll(problem.getSectionsOfProblem(problem.ID, conn));   
+                arrayList.add(problem);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("get all exam error");
+            System.out.println(e.getMessage());
+            System.out.println(e.getStackTrace());
+            return null;
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception e) {
+            }
+        }
+
+        return arrayList;
     }
     int ID;
     char answer;

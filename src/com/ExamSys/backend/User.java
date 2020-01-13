@@ -202,8 +202,8 @@ public class User implements IDBRecord{
         ResultSet rs = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Select username,name,role From user ");
-
+            statement = conn.prepareStatement("Select username,name,role From user Where role=? ");
+            statement.setInt(1, role.getValue());
             rs = statement.executeQuery();
 
             while(rs.next())

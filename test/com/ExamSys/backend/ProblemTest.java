@@ -8,6 +8,7 @@ package com.ExamSys.backend;
 import com.mysql.cj.xdevapi.Statement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -119,8 +120,19 @@ public class ProblemTest {
         assertEquals(problem.getSections().get(0).getText(), "section 1 text");
         assertEquals(problem.getSections().get(1).getText(), "section 2 text modified");
         
+        List<Problem> list =Problem.getAllProblems();
+        assertEquals(list.size(), 2);
+        Problem p1=list.get(0);
+        Problem p2=list.get(1);
+        assertEquals("problem1", p1.name);
+        assertEquals("problem2", p2.name);
+        
+      
+        
+        
         assertTrue(problem.remove());
         assertFalse(problem.get(id));
+        
 
     }
 }

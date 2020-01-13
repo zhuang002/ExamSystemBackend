@@ -23,7 +23,45 @@ import java.util.Properties;
 public class Exam implements IDBRecord {
 
     public static List<Exam> getAllExams() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+      ArrayList<Exam> arrayList = new ArrayList<Exam>();
+       
+        Connection conn = null;
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            conn = Utility.getConnection();
+            statement = conn.prepareStatement("Select id, description, date, timelimit  From exam order by id desc ");
+
+            rs = statement.executeQuery();
+
+            while(rs.next())
+            {
+               Exam exam = new Exam();
+               exam.ID=rs.getInt("id");
+               exam.description=rs.getString("description");
+                exam.dateTime=new Date(rs.getDate("date").getTime());
+                exam.timeLimit=Duration.ofSeconds(rs.getLong("timelimit"));
+                arrayList.add(exam);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("get all exam error");
+            System.out.println(e.getMessage());
+            System.out.println(e.getStackTrace());
+            return null;
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception e) {
+            }
+        }
+
+        return arrayList;
     }
 
 
