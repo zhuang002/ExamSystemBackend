@@ -18,7 +18,7 @@ public class Utility {
         } catch (ClassNotFoundException e) {
             System.out.println(e);
         }
-        Connection conn= DriverManager.getConnection("jdbc:mysql://localhost:3306/examsystem","root","Admin");
+        Connection conn= DriverManager.getConnection("jdbc:mysql://localhost:3306/examsystem","root","admin");
         return conn;
     }
 }

@@ -23,8 +23,8 @@ import java.util.Properties;
 public class Exam implements IDBRecord {
 
     public static List<Exam> getAllExams() {
-      ArrayList<Exam> arrayList = new ArrayList<Exam>();
-       
+        ArrayList<Exam> arrayList = new ArrayList<Exam>();
+
         Connection conn = null;
         PreparedStatement statement = null;
         ResultSet rs = null;
@@ -34,14 +34,17 @@ public class Exam implements IDBRecord {
 
             rs = statement.executeQuery();
 
-            while(rs.next())
-            {
-               Exam exam = new Exam();
-               exam.ID=rs.getInt("id");
-               exam.description=rs.getString("description");
-                exam.dateTime=new Date(rs.getDate("date").getTime());
-                exam.timeLimit=Duration.ofSeconds(rs.getLong("timelimit"));
+            while (rs.next()) {
+                Exam exam = new Exam();
+                exam.ID = rs.getInt("id");
+                exam.description = rs.getString("description");
+                exam.dateTime = new Date(rs.getDate("date").getTime());
+                exam.timeLimit = Duration.ofSeconds(rs.getLong("timelimit"));
                 arrayList.add(exam);
+
+                List problemList = exam.getProblems();
+                problemList.clear();
+                problemList.addAll(exam.getProblemsOfExam(exam.ID, conn));
             }
 
         } catch (SQLException e) {
@@ -64,22 +67,20 @@ public class Exam implements IDBRecord {
         return arrayList;
     }
 
-
     int ID;
     String description;
     Date dateTime;
-    List<Problem> problems= new ArrayList<Problem>();
+    List<Problem> problems = new ArrayList<Problem>();
     Duration timeLimit;
 
     public int getID() {
         return ID;
     }
-    
+
     public String getDescription() {
-         timeLimit=Duration.ofMinutes(120);
+        timeLimit = Duration.ofMinutes(120);
         return description;
-        
-       
+
     }
 
     public void setDescription(String description) {
@@ -98,7 +99,7 @@ public class Exam implements IDBRecord {
         } catch (Exception e) {
             System.out.println("Exam date format is not valid.");
         }
-        
+
     }
 
     public List<Problem> getProblems() {
@@ -112,46 +113,43 @@ public class Exam implements IDBRecord {
     public void setTimeLimit(Duration timeLimit) {
         this.timeLimit = timeLimit;
     }
-    
-   
+
     static Exam getExamByID(int examID) {
-       Exam exam = new Exam();
-       if(exam.get(examID)){
-           return exam;
-       }else{
-           return null;
-       }
-        
+        Exam exam = new Exam();
+        if (exam.get(examID)) {
+            return exam;
+        } else {
+            return null;
+        }
+
     }
-    
-    public static boolean removeByID(int id){
-        
-       
+
+    public static boolean removeByID(int id) {
+
         Connection conn = null;
         PreparedStatement statement = null;
         try {
             conn = Utility.getConnection();
             conn.setAutoCommit(false);
-            
-             statement = conn.prepareStatement("delete from  Exam where id=?");
+
+            statement = conn.prepareStatement("delete from  Exam where id=?");
             statement.setInt(1, id);
-            
+
             statement.executeUpdate();
             statement.close();
-            
-            
-            statement=conn.prepareStatement("delete from exam_problem where examid=?");
+
+            statement = conn.prepareStatement("delete from exam_problem where examid=?");
             statement.setInt(1, id);
-            
-             statement.executeUpdate();
+
+            statement.executeUpdate();
             statement.close();
             conn.commit();
-        
+
         } catch (SQLException e) {
-            try{
+            try {
                 conn.rollback();
-            }catch(Exception ee){
-                
+            } catch (Exception ee) {
+
             }
             System.out.println("remove exam error");
             System.out.println(e.getMessage());
@@ -175,27 +173,27 @@ public class Exam implements IDBRecord {
 
     @Override
     public boolean create() {
-        
+
         Connection conn = null;
         PreparedStatement statement = null;
         try {
             conn = Utility.getConnection();
             conn.setAutoCommit(false);
             statement = conn.prepareStatement("Insert into Exam ( description, date, timelimit) Values(?,?,?)", Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1,this.description);
-            statement.setDate(2, new  java.sql.Date(this.dateTime.getTime()));
+            statement.setString(1, this.description);
+            statement.setDate(2, new java.sql.Date(this.dateTime.getTime()));
             statement.setLong(3, this.timeLimit.getSeconds());
-            
-            statement.executeUpdate(); 
-            ResultSet rs=statement.getGeneratedKeys();
-            if(rs.next()){
-                this.ID=rs.getInt(1);
+
+            statement.executeUpdate();
+            ResultSet rs = statement.getGeneratedKeys();
+            if (rs.next()) {
+                this.ID = rs.getInt(1);
             }
             statement.close();
-            
-            for(int i=0;i<this.problems.size();i++){
-                int problemId=this.problems.get(i).getID();
-                statement=conn.prepareStatement("Insert into exam_problem (examid,problemid) Values(?,?)");
+
+            for (int i = 0; i < this.problems.size(); i++) {
+                int problemId = this.problems.get(i).getID();
+                statement = conn.prepareStatement("Insert into exam_problem (examid,problemid) Values(?,?)");
                 statement.setInt(1, this.ID);
                 statement.setInt(2, problemId);
                 statement.executeUpdate();
@@ -203,10 +201,10 @@ public class Exam implements IDBRecord {
             }
             conn.commit();
         } catch (SQLException e) {
-            try{
+            try {
                 conn.rollback();
-            }catch(Exception ee){
-                
+            } catch (Exception ee) {
+
             }
             System.out.println("create exam error");
             System.out.println(e.getMessage());
@@ -225,47 +223,46 @@ public class Exam implements IDBRecord {
             }
         }
         return true;
-  
+
     }
 
     @Override
-    public boolean update() {        
-      
+    public boolean update() {
+
         Connection conn = null;
         PreparedStatement statement = null;
         try {
             conn = Utility.getConnection();
             conn.setAutoCommit(false);
-            
-             statement = conn.prepareStatement("update Exam set description=?, date=? , timelimit=? where id=?");
-            statement.setString(1,this.description);
-            statement.setDate(2, new  java.sql.Date(this.dateTime.getTime()));
+
+            statement = conn.prepareStatement("update Exam set description=?, date=? , timelimit=? where id=?");
+            statement.setString(1, this.description);
+            statement.setDate(2, new java.sql.Date(this.dateTime.getTime()));
             statement.setLong(3, this.timeLimit.getSeconds());
             statement.setInt(4, this.ID);
-            
+
             statement.executeUpdate();
             statement.close();
-            
-            
-            statement=conn.prepareStatement("delete from exam_problem where examid=?");
+
+            statement = conn.prepareStatement("delete from exam_problem where examid=?");
             statement.setInt(1, this.ID);
             statement.executeUpdate();
-            
-             for(int i=0;i<this.problems.size();i++){
-                int problemId=this.problems.get(i).getID();
-                statement=conn.prepareStatement("Insert into exam_problem (examid,problemid) Values(?,?)");
+
+            for (int i = 0; i < this.problems.size(); i++) {
+                int problemId = this.problems.get(i).getID();
+                statement = conn.prepareStatement("Insert into exam_problem (examid,problemid) Values(?,?)");
                 statement.setInt(1, this.ID);
                 statement.setInt(2, problemId);
                 statement.executeUpdate();
                 statement.close();
             }
             conn.commit();
-        
+
         } catch (SQLException e) {
-            try{
+            try {
                 conn.rollback();
-            }catch(Exception ee){
-                
+            } catch (Exception ee) {
+
             }
             System.out.println("update exam error");
             System.out.println(e.getMessage());
@@ -288,13 +285,11 @@ public class Exam implements IDBRecord {
 
     @Override
     public boolean remove() {
-     
-       return removeByID(this.ID);
-   
-        
+
+        return removeByID(this.ID);
+
     }
- 
-    
+
     @Override
     public boolean get(int id) {
         Connection conn = null;
@@ -307,21 +302,21 @@ public class Exam implements IDBRecord {
             rs = statement.executeQuery();
 
             if (rs.next()) {
-                this.description=rs.getString("description");
-                this.dateTime=new Date(rs.getDate("date").getTime());
-                this.timeLimit=Duration.ofSeconds(rs.getLong("timelimit"));
-                this.ID=id;
-            } else return false;
+                this.description = rs.getString("description");
+                this.dateTime = new Date(rs.getDate("date").getTime());
+                this.timeLimit = Duration.ofSeconds(rs.getLong("timelimit"));
+                this.ID = id;
+            } else {
+                return false;
+            }
             statement.close();
-            
+
 //            statement=conn.prepareStatement("Select score from reportscore Where id=? order by index");
 //              statement.setInt(1, id);
 //            rs = statement.executeQuery();
-            
-            
-            List problemList=this.getProblems();
+            List problemList = this.getProblems();
             problemList.clear();
-            problemList.addAll(getProblemsOfExam(id, conn));            
+            problemList.addAll(getProblemsOfExam(id, conn));
         } catch (SQLException e) {
             System.out.println("create user error");
             System.out.println(e.getMessage());
@@ -347,23 +342,20 @@ public class Exam implements IDBRecord {
         ResultSet rs = statement.executeQuery();
         List<Problem> problemList = new ArrayList<Problem>();
         while (rs.next()) {
-            Problem problem=new Problem();
-            problem.ID=rs.getInt(1);
+            Problem problem = new Problem();
+            problem.ID = rs.getInt(1);
             problemList.add(problem);
         }
-        
-        for (Problem problem:problemList) {
+
+        for (Problem problem : problemList) {
             problem.get(problem.getID());
         }
         return problemList;
     }
 
-    
     @Override
     public String toString() {
         return this.description;
     }
 
-
-    
 }
