@@ -75,7 +75,7 @@ public class Exam implements IDBRecord {
         try {
             conn = Utility.getConnection();
             statement = conn.prepareStatement("Select distinct id,description,date,timeLimit from examreport_view " +
-                    "where reportid is null or studentid<>? "
+                    "where deleted=0  and (reportid is null or studentid<>?) "
                     + " order by id desc ");
             statement.setString(1, user.getUserName());
             rs = statement.executeQuery();

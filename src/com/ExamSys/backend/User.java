@@ -84,18 +84,30 @@ public class User implements IDBRecord{
         return true;
     }
 
-    @Override
     public boolean update() {
+        return this.update(false);
+    }
+    
+    public boolean update(boolean updatePassword) {
       
         Connection conn = null;
         PreparedStatement statement = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Update User Set name=?,role=? Where username=?");
-            statement.setString(1, this.name);
-            statement.setInt(2, this.role.getValue());
-            statement.setString(3, this.username);
-            statement.executeUpdate();
+            if (updatePassword) {
+                statement = conn.prepareStatement("Update User Set name=?,role=?,password=? Where username=?");
+                statement.setString(1, this.name);
+                statement.setInt(2, this.role.getValue());
+                statement.setString(3,this.password);
+                statement.setString(4, this.username);
+                statement.executeUpdate();
+            } else {
+                statement = conn.prepareStatement("Update User Set name=?,role=? Where username=?");
+                statement.setString(1, this.name);
+                statement.setInt(2, this.role.getValue());
+                statement.setString(3, this.username);
+                statement.executeUpdate();
+            }
 
         } catch (SQLException e) {
             System.out.println("update user error");
@@ -274,4 +286,6 @@ public class User implements IDBRecord{
     public String toString() {
         return this.username+" - "+this.name;
     }
+
+    
 }
