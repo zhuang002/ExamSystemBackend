@@ -145,5 +145,10 @@ public class UserTest {
 
         user.remove();
 
+        user.setName("Super User");
+        user.setPassword("admin");
+        user.setRole(Role.Admin);
+        user.setUserName("admin");
+        user.create();
     }
 }

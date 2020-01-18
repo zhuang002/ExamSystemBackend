@@ -70,7 +70,7 @@ public class ProblemTest {
     public void test_ProblemSection_cmr() {
         Problem problem = new Problem();
 
-        problem.setAnswer('a');
+        problem.setAnswer('A');
         problem.setName("problem1");
 
         ProblemSection section = new ProblemSection();
@@ -87,7 +87,7 @@ public class ProblemTest {
 
         problem = new Problem();
 
-        problem.setAnswer('a');
+        problem.setAnswer('A');
         problem.setName("problem2");
 
         section = new ProblemSection();
@@ -104,18 +104,18 @@ public class ProblemTest {
         assertTrue(problem.get(id));
 
         assertEquals(problem.getName(), "problem1");
-        assertEquals(problem.answer, 'a');
+        assertEquals(problem.answer, 'A');
         assertEquals(2, problem.getSections().size());
         assertEquals(problem.getSections().get(0).getText(), "section 1 text");
         assertEquals(problem.getSections().get(1).getText(), "section 2 text");
         
         problem.getSections().get(1).setText("section 2 text modified");
-        problem.setAnswer('b');
+        problem.setAnswer('B');
         problem.update();
         
         assertTrue(problem.get(id));
         assertEquals(problem.getName(), "problem1");
-        assertEquals(problem.answer, 'b');
+        assertEquals(problem.answer, 'B');
         assertEquals(2, problem.getSections().size());
         assertEquals(problem.getSections().get(0).getText(), "section 1 text");
         assertEquals(problem.getSections().get(1).getText(), "section 2 text modified");

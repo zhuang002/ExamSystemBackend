@@ -5,12 +5,10 @@
  */
 package com.ExamSys.backend;
 
-import com.mysql.cj.jdbc.MysqlDataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 
@@ -22,7 +20,8 @@ public class Report implements IDBRecord {
 
     int ID;
     int examID;
-    ArrayList<Integer> scoreList = new ArrayList<Integer>();
+    ArrayList<int[]> scoreList = new ArrayList<>();
+
     String studentUserName = null;
     int totalScore = 0;
     Date dateTime;
@@ -45,14 +44,14 @@ public class Report implements IDBRecord {
         this.examID = examid;
     }
 
-    public List<Integer> getScoreList() {
+    public List<int[]> getScoreList() {
         return this.scoreList;
     }
 
     public int getScore() {
         int total = 0;
-        for (int score : scoreList) {
-            total += score;
+        for (int[] score : scoreList) {
+            total += score[0];
         }
         return total;
     }
@@ -83,6 +82,7 @@ public class Report implements IDBRecord {
         }
     }
 
+    @Override
     public boolean create() {
 
         Connection conn = null;
@@ -103,18 +103,21 @@ public class Report implements IDBRecord {
             statement.close();
 
             for (int i = 0; i < scoreList.size(); i++) {
-                int score = this.scoreList.get(i);
-                statement = conn.prepareStatement("Insert into reportscore (idx,report,score) Values(?,?,?)");
+                int score = this.scoreList.get(i)[0];
+                int answer = this.scoreList.get(i)[1];
+                statement = conn.prepareStatement("Insert into reportscore (idx,report,score,answer) Values(?,?,?,?)");
                 statement.setInt(1, i);
                 statement.setInt(2, this.ID);
                 statement.setInt(3, score);
+                statement.setInt(4, answer);
                 statement.executeUpdate();
                 statement.close();
             }
             conn.commit();
         } catch (SQLException e) {
             try {
-                conn.rollback();
+                if (conn!=null)
+                    conn.rollback();
             } catch (Exception ee) {
 
             }
@@ -124,7 +127,8 @@ public class Report implements IDBRecord {
             return false;
         } finally {
             try {
-                conn.setAutoCommit(true);
+                if (conn!=null)
+                    conn.setAutoCommit(true);
                 if (statement != null) {
                     statement.close();
                 }
@@ -137,6 +141,7 @@ public class Report implements IDBRecord {
         return true;
     }
 
+    @Override
     public boolean update() {
 
         Connection conn = null;
@@ -146,9 +151,10 @@ public class Report implements IDBRecord {
             conn.setAutoCommit(false);
 
             for (int i = 0; i < scoreList.size(); i++) {
-                int score = this.scoreList.get(i);
+                int[] score = this.scoreList.get(i);
+                
                 statement = conn.prepareStatement("update reportscore set score=? where idx=? And report=?");
-                statement.setInt(1, score);
+                statement.setInt(1, score[0]);
                 statement.setInt(2, i);
                 statement.setInt(3, this.ID);
                 statement.executeUpdate();
@@ -157,7 +163,8 @@ public class Report implements IDBRecord {
             conn.commit();
         } catch (SQLException e) {
             try {
-                conn.rollback();
+                if (conn!=null)
+                    conn.rollback();
             } catch (Exception ee) {
 
             }
@@ -167,7 +174,8 @@ public class Report implements IDBRecord {
             return false;
         } finally {
             try {
-                conn.setAutoCommit(true);
+                if (conn!=null)
+                    conn.setAutoCommit(true);
                 if (statement != null) {
                     statement.close();
                 }
@@ -180,6 +188,7 @@ public class Report implements IDBRecord {
         return true;
     }
 
+    @Override
     public boolean remove() {
         return remove(this.ID);
     }
@@ -190,18 +199,11 @@ public class Report implements IDBRecord {
         PreparedStatement statement = null;
         try {
             conn = Utility.getConnection();
-            conn.setAutoCommit(false);
-            statement = conn.prepareStatement("delete from report where id=?");
+            statement = conn.prepareStatement("Update report Set deleted=1 where id=?");
             statement.setInt(1, id);
             statement.executeUpdate();
             statement.close();
 
-            statement = conn.prepareStatement("delete from reportscore where report=?");
-            statement.setInt(1, id);
-            statement.executeUpdate();
-            statement.close();
-
-            conn.commit();
         } catch (SQLException e) {
             try {
                 conn.rollback();
@@ -214,7 +216,6 @@ public class Report implements IDBRecord {
             return false;
         } finally {
             try {
-                conn.setAutoCommit(true);
                 if (statement != null) {
                     statement.close();
                 }
@@ -227,6 +228,7 @@ public class Report implements IDBRecord {
         return true;
     }
 
+    @Override
     public boolean get(int id) {
 //        Report report = new Report();
 
@@ -235,7 +237,7 @@ public class Report implements IDBRecord {
         ResultSet rs = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Select examid, student,date from report Where id=? ");
+            statement = conn.prepareStatement("Select examid, student,date from report Where deleted=0 And id=? ");
             statement.setInt(1, id);
             rs = statement.executeQuery();
 
@@ -247,9 +249,8 @@ public class Report implements IDBRecord {
             }
             statement.close();
 
-            List scoreList = this.getScoreList();
-            scoreList.clear();
-            scoreList.addAll(getScoreOfReport(id, conn));
+            this.scoreList.clear();
+            this.scoreList.addAll(getScoreOfReport(id, conn));
         } catch (SQLException e) {
             System.out.println("create user error");
             System.out.println(e.getMessage());
@@ -277,7 +278,7 @@ public class Report implements IDBRecord {
         ResultSet rs = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Select id,examid,date from report Where student=? ");
+            statement = conn.prepareStatement("Select id,examid,date from report Where deleted=0 And student=? ");
             statement.setString(1, StudentUsername);
             rs = statement.executeQuery();
 
@@ -293,7 +294,7 @@ public class Report implements IDBRecord {
             statement.close();
 
             for (Report report : ret) {
-                List scoreList = report.getScoreList();
+                List<int[]> scoreList = report.getScoreList();
                 scoreList.clear();
                 scoreList.addAll(getScoreOfReport(report.getID(), conn));
 
@@ -318,14 +319,17 @@ public class Report implements IDBRecord {
 
     }
 
-    private static Collection getScoreOfReport(int id, Connection conn) throws SQLException {
-        PreparedStatement statement = conn.prepareStatement("Select score from reportscore Where report=? order by idx");
+    private static Collection<int[]> getScoreOfReport(int id, Connection conn) throws SQLException {
+        PreparedStatement statement = conn.prepareStatement("Select score,answer from reportscore Where report=? order by idx");
         statement.setInt(1, id);
         ResultSet rs = statement.executeQuery();
-        List scoreList = new ArrayList<Integer>();
+        List<int[]> scoreList = new ArrayList<>();
         scoreList.clear();
         while (rs.next()) {
-            scoreList.add(rs.getInt(1));
+            int[] sa=new int[2];
+            sa[0]=rs.getInt("score");
+            sa[1]=rs.getInt("answer");
+            scoreList.add(sa);
         }
         return scoreList;
     }
@@ -337,6 +341,12 @@ public class Report implements IDBRecord {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public String toString() {
+        SimpleDateFormat format=new SimpleDateFormat("MM-dd-yyyy");
+        return this.getExam().toString()+"@"+format.format(this.getDate());
     }
 
 }

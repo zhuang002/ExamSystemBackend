@@ -23,5 +23,14 @@ public enum Role {
     public int getValue(){
         return this.value;
     }
+    
+    static public Role getRole(int rv) {
+        switch (rv) {
+            case 0: return Role.Admin;
+            case 1: return Role.Teacher;
+            case 2: return Role.Student;
+            default: return Role.Student;
+        }
+    }
 
 }

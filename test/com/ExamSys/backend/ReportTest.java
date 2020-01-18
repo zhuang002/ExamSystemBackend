@@ -99,8 +99,10 @@ public class ReportTest {
         report.setExam(exams.get(0));
         report.setStudent(users.get(0));
         
-        report.getScoreList().add(2);
-        report.getScoreList().add(3);
+        int[] sa1=new int[] {4,'A'};
+        int[] sa2=new int[] {0,'B'};
+        report.getScoreList().add(sa1);
+        report.getScoreList().add(sa2);
         
         assertTrue(report.create());
         
@@ -110,17 +112,18 @@ public class ReportTest {
         assertEquals(report2.getExam().getID(), exams.get(0).getID());
         assertEquals(report2.getStudent().getUserName(), users.get(0).getUserName());
         
-        assertEquals(report2.getScore(), 5);
-        int score=report2.getScoreList().get(0);
-        assertEquals(score, 2);
-        score=report2.getScoreList().get(1);
-        assertEquals(score, 3);
+        assertEquals(report2.getScore(), 4);
+        int[] sa=report2.getScoreList().get(0);
+        assertEquals(sa[0], 4);
+        sa=report2.getScoreList().get(1);
+        assertEquals(sa[0], 0);
         
         Exam exam1=exams.get(0);
         Exam exam2=report2.getExam();
         assertEquals(exam1.getDateTime(),exam2.getDateTime());
         assertEquals(exam1.getProblems().size(), exam2.getProblems().size());
-        assertEquals(exam1.getProblems().get(0).getName(),exam2.getProblems().get(0).getName());
+        assertEquals(exam1.getProblems().get(0).problem.getName(),
+                exam2.getProblems().get(0).problem.getName());
         
         User user1=users.get(0);
         User user2=report.getStudent();
@@ -142,7 +145,7 @@ public class ReportTest {
         exam1.setTimeLimit(Duration.ofHours(1));
         
         Problem problem1=new Problem();
-        problem1.setAnswer('a');
+        problem1.setAnswer('A');
         problem1.setName("problem 1");
         
         ProblemSection section1=new ProblemSection();
@@ -155,11 +158,11 @@ public class ReportTest {
         problem1.getSections().add(section2);
         problem1.create();
         
-        exam1.getProblems().add(problem1);
+        exam1.getProblems().add(new ProblemScore(problem1,1));
         
         
         Problem problem2=new Problem();
-        problem2.setAnswer('b');
+        problem2.setAnswer('B');
         problem2.setName("problem 2");
         
         
@@ -173,7 +176,7 @@ public class ReportTest {
         problem2.getSections().add(section4);
         problem2.create();
         
-        exam1.getProblems().add(problem2);
+        exam1.getProblems().add(new ProblemScore(problem2,2));
         
         exam1.create();
         

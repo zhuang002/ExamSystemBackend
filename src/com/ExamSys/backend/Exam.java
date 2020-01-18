@@ -5,7 +5,6 @@
  */
 package com.ExamSys.backend;
 
-import com.mysql.cj.jdbc.MysqlDataSource;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 
@@ -14,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 
 /**
  *
@@ -23,14 +21,15 @@ import java.util.Properties;
 public class Exam implements IDBRecord {
 
     public static List<Exam> getAllExams() {
-        ArrayList<Exam> arrayList = new ArrayList<Exam>();
+        ArrayList<Exam> arrayList = new ArrayList<>();
 
         Connection conn = null;
         PreparedStatement statement = null;
         ResultSet rs = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Select id, description, date, timelimit  From exam order by id desc ");
+            statement = conn.prepareStatement("Select id, description, date, timelimit  From exam "
+                    + "Where deleted=0 order by id desc ");
 
             rs = statement.executeQuery();
 
@@ -42,9 +41,9 @@ public class Exam implements IDBRecord {
                 exam.timeLimit = Duration.ofSeconds(rs.getLong("timelimit"));
                 arrayList.add(exam);
 
-                List problemList = exam.getProblems();
-                problemList.clear();
-                problemList.addAll(exam.getProblemsOfExam(exam.ID, conn));
+                exam.getProblems().clear();
+                exam.getProblems().addAll(exam.getProblemsOfExam(exam.ID, conn));
+                
             }
 
         } catch (SQLException e) {
@@ -67,20 +66,67 @@ public class Exam implements IDBRecord {
         return arrayList;
     }
 
+    public static List<Exam> getAllAvailableExams(User user) {
+        ArrayList<Exam> arrayList = new ArrayList<>();
+
+        Connection conn = null;
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            conn = Utility.getConnection();
+            statement = conn.prepareStatement("Select distinct id,description,date,timeLimit from examreport_view " +
+                    "where reportid is null or studentid<>? "
+                    + " order by id desc ");
+            statement.setString(1, user.getUserName());
+            rs = statement.executeQuery();
+
+            while (rs.next()) {
+                Exam exam = new Exam();
+                exam.ID = rs.getInt("id");
+                exam.description = rs.getString("description");
+                exam.dateTime = new Date(rs.getDate("date").getTime());
+                exam.timeLimit = Duration.ofSeconds(rs.getLong("timelimit"));
+                arrayList.add(exam);
+
+                exam.getProblems().clear();
+                exam.getProblems().addAll(exam.getProblemsOfExam(exam.ID, conn));
+                
+            }
+
+        } catch (SQLException e) {
+            System.out.println("get all exam error");
+            System.out.println(e.getMessage());
+            System.out.println(e.getStackTrace());
+            return null;
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception e) {
+            }
+        }
+
+        return arrayList;
+    }
+
+
     int ID;
     String description;
-    Date dateTime;
-    List<Problem> problems = new ArrayList<Problem>();
+    Date dateTime=new Date();
+    List<ProblemScore> problems = new ArrayList<>();
     Duration timeLimit;
+    //HashMap<Problem,Integer> scores=new HashMap<>();
 
     public int getID() {
         return ID;
     }
 
     public String getDescription() {
-        timeLimit = Duration.ofMinutes(120);
         return description;
-
     }
 
     public void setDescription(String description) {
@@ -102,8 +148,8 @@ public class Exam implements IDBRecord {
 
     }
 
-    public List<Problem> getProblems() {
-        return problems;
+    public List<ProblemScore> getProblems() {
+        return this.problems;
     }
 
     public Duration getTimeLimit() {
@@ -130,34 +176,22 @@ public class Exam implements IDBRecord {
         PreparedStatement statement = null;
         try {
             conn = Utility.getConnection();
-            conn.setAutoCommit(false);
 
-            statement = conn.prepareStatement("delete from  Exam where id=?");
+            statement = conn.prepareStatement("update  Exam Set deleted=1 where id=?");
             statement.setInt(1, id);
 
             statement.executeUpdate();
             statement.close();
-
-            statement = conn.prepareStatement("delete from exam_problem where examid=?");
-            statement.setInt(1, id);
-
-            statement.executeUpdate();
-            statement.close();
-            conn.commit();
+            
 
         } catch (SQLException e) {
-            try {
-                conn.rollback();
-            } catch (Exception ee) {
-
-            }
+            
             System.out.println("remove exam error");
             System.out.println(e.getMessage());
             System.out.println(e.getStackTrace());
             return false;
         } finally {
             try {
-                conn.setAutoCommit(true);
                 if (statement != null) {
                     statement.close();
                 }
@@ -192,15 +226,20 @@ public class Exam implements IDBRecord {
             statement.close();
 
             for (int i = 0; i < this.problems.size(); i++) {
-                int problemId = this.problems.get(i).getID();
-                statement = conn.prepareStatement("Insert into exam_problem (examid,problemid) Values(?,?)");
+                int problemId = this.problems.get(i).problem.getID();
+                int score=this.problems.get(i).score;
+                statement = conn.prepareStatement("Insert into exam_problem (examid,problemid,score,idx) Values(?,?,?,?)");
                 statement.setInt(1, this.ID);
                 statement.setInt(2, problemId);
+                statement.setInt(3, score);
+                statement.setInt(4,i);
                 statement.executeUpdate();
+                statement.close();
+                
                 statement.close();
             }
             conn.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             try {
                 conn.rollback();
             } catch (Exception ee) {
@@ -249,10 +288,13 @@ public class Exam implements IDBRecord {
             statement.executeUpdate();
 
             for (int i = 0; i < this.problems.size(); i++) {
-                int problemId = this.problems.get(i).getID();
-                statement = conn.prepareStatement("Insert into exam_problem (examid,problemid) Values(?,?)");
+                int problemId = this.problems.get(i).problem.getID();
+                int score=this.problems.get(i).score;
+                statement = conn.prepareStatement("Insert into exam_problem (examid,problemid,score,idx) Values(?,?,?,?)");
                 statement.setInt(1, this.ID);
                 statement.setInt(2, problemId);
+                statement.setInt(3,score);
+                statement.setInt(4,i);
                 statement.executeUpdate();
                 statement.close();
             }
@@ -270,7 +312,8 @@ public class Exam implements IDBRecord {
             return false;
         } finally {
             try {
-                conn.setAutoCommit(true);
+                if (conn!=null)
+                    conn.setAutoCommit(true);
                 if (statement != null) {
                     statement.close();
                 }
@@ -311,12 +354,10 @@ public class Exam implements IDBRecord {
             }
             statement.close();
 
-//            statement=conn.prepareStatement("Select score from reportscore Where id=? order by index");
-//              statement.setInt(1, id);
-//            rs = statement.executeQuery();
-            List problemList = this.getProblems();
-            problemList.clear();
-            problemList.addAll(getProblemsOfExam(id, conn));
+            
+            this.getProblems().clear();
+            this.getProblems().addAll(getProblemsOfExam(id, conn));
+            
         } catch (SQLException e) {
             System.out.println("create user error");
             System.out.println(e.getMessage());
@@ -336,26 +377,66 @@ public class Exam implements IDBRecord {
         return true;
     }
 
-    private Collection getProblemsOfExam(int id, Connection conn) throws SQLException {
-        PreparedStatement statement = conn.prepareStatement("Select problemid from exam_problem Where examid=? order by problemid");
+    private Collection<ProblemScore> getProblemsOfExam(int id, Connection conn) throws SQLException {
+        PreparedStatement statement = conn.prepareStatement("Select problemid,score from exam_problem Where examid=? order by idx");
         statement.setInt(1, id);
         ResultSet rs = statement.executeQuery();
-        List<Problem> problemList = new ArrayList<Problem>();
+        List<ProblemScore> problemList = new ArrayList<>();
         while (rs.next()) {
-            Problem problem = new Problem();
-            problem.ID = rs.getInt(1);
-            problemList.add(problem);
+            ProblemScore problemScore = new ProblemScore(new Problem(),0);
+            problemScore.problem=new Problem();
+            problemScore.problem.ID = rs.getInt(1);
+            problemScore.score=rs.getInt(2);
+            problemList.add(problemScore);
         }
 
-        for (Problem problem : problemList) {
-            problem.get(problem.getID());
+        for (ProblemScore problemScore : problemList) {
+            problemScore.problem.get(problemScore.problem.getID());
         }
         return problemList;
     }
 
     @Override
     public String toString() {
-        return this.description;
+        return this.description; //To change body of generated methods, choose Tools | Templates.
     }
 
+    public boolean isReadOnly() {
+        Connection conn = null;
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            conn = Utility.getConnection();
+            statement = conn.prepareStatement("Select count(*) from report Where examid=?");
+            statement.setInt(1, this.ID);
+            rs = statement.executeQuery();
+
+            int count=0;
+            if (rs.next()) {
+                count=rs.getInt(1);
+            } else {
+                return false;
+            }
+            statement.close();
+
+            
+            return count!=0;
+            
+        } catch (SQLException e) {
+            System.out.println("get exam.readOnly() error");
+            System.out.println(e.getMessage());
+            System.out.println(e.getStackTrace());
+            return false;
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception e) {
+            }
+        }
+    }
 }

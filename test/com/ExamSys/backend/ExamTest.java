@@ -86,7 +86,7 @@ public class ExamTest {
         exam1.setTimeLimit(Duration.ofHours(1));
         
         Problem problem1=new Problem();
-        problem1.setAnswer('a');
+        problem1.setAnswer('A');
         problem1.setName("problem 1");
         
         ProblemSection section1=new ProblemSection();
@@ -99,11 +99,11 @@ public class ExamTest {
         problem1.getSections().add(section2);
         problem1.create();
         
-        exam1.getProblems().add(problem1);
+        exam1.getProblems().add(new ProblemScore(problem1,1));
         
         
         Problem problem2=new Problem();
-        problem2.setAnswer('b');
+        problem2.setAnswer('B');
         problem2.setName("problem 2");
         
         
@@ -117,7 +117,7 @@ public class ExamTest {
         problem2.getSections().add(section4);
         problem2.create();
         
-        exam1.getProblems().add(problem2);
+        exam1.getProblems().add(new ProblemScore(problem2,2));
         
         assertTrue(exam1.create());
         
@@ -143,7 +143,7 @@ public class ExamTest {
         problem1.getSections().add(section2);
         problem1.create();
         
-        exam2.getProblems().add(problem1);
+        exam2.getProblems().add(new ProblemScore(problem1,3));
         
         
         problem2=new Problem();
@@ -161,7 +161,7 @@ public class ExamTest {
         problem2.getSections().add(section4);
         problem2.create();
         
-        exam2.getProblems().add(problem2);
+        exam2.getProblems().add(new ProblemScore(problem2,4));
         
         exam2.create();
         
@@ -169,16 +169,6 @@ public class ExamTest {
         assertEquals(list.size(), 2);
         assertEquals(list.get(0).getDescription(),exam2.getDescription());
         assertEquals(list.get(1).getDescription(),exam1.getDescription());
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         exam2=new Exam();
@@ -189,9 +179,9 @@ public class ExamTest {
         assertEquals(exam1.getTimeLimit().getSeconds(),exam2.getTimeLimit().getSeconds());
         
         assertEquals(exam2.getProblems().size(),2);
-        assertEquals(exam2.getProblems().get(0).getSections().size(), 2);
-        assertEquals(exam2.getProblems().get(1).name,"problem 2");
-        assertEquals(exam2.getProblems().get(1).getSections().get(0).getText(),"ps 2.1");
+        assertEquals(exam2.getProblems().get(0).problem.getSections().size(), 2);
+        assertEquals(exam2.getProblems().get(1).problem.name,"problem 2");
+        assertEquals(exam2.getProblems().get(1).problem.getSections().get(0).getText(),"ps 2.1");
         
         try {
             exam1.setDateTime(new SimpleDateFormat("dd/MM/yyyy").parse("01/01/2000"));
@@ -204,11 +194,12 @@ public class ExamTest {
         exam2.get(exam1.getID());
         assertEquals(exam1.getDateTime(),exam2.getDateTime());
         assertEquals(exam2.getProblems().size(),1);
-        assertEquals(exam2.getProblems().get(0).name, "problem 2");
+        assertEquals(exam2.getProblems().get(0).problem.name, "problem 2");
         
         
         exam2.remove();
-        assertFalse(exam2.get(exam1.getID()));
+        assertTrue(exam2.get(exam1.getID()));
+        assertEquals(Exam.getAllExams().size(),1);
     }
     
    

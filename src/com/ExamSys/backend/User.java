@@ -6,16 +6,11 @@
 package com.ExamSys.backend;
 
 import java.sql.Connection;
-import javax.sql.DataSource;
-import com.mysql.cj.jdbc.MysqlDataSource;
-import java.util.Properties;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 /**
  *
@@ -56,6 +51,7 @@ public class User implements IDBRecord{
         this.role = role;
     }
 
+    @Override
     public boolean create() {
        
         Connection conn = null;
@@ -88,6 +84,7 @@ public class User implements IDBRecord{
         return true;
     }
 
+    @Override
     public boolean update() {
       
         Connection conn = null;
@@ -120,6 +117,7 @@ public class User implements IDBRecord{
 
     }
 
+    @Override
     public boolean remove() {
         return remove(this.username);
     }
@@ -130,7 +128,7 @@ public class User implements IDBRecord{
         PreparedStatement statement = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Delete From User Where username=? ");
+            statement = conn.prepareStatement("Update User Set deleted=1  Where username=? ");
             statement.setString(1, username);
             statement.executeUpdate();
 
@@ -161,7 +159,7 @@ public class User implements IDBRecord{
         ResultSet rs = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Select name,role,password From user Where username=? ");
+            statement = conn.prepareStatement("Select name,role,password From user Where deleted=0 And username=? ");
             statement.setString(1, username);
             rs = statement.executeQuery();
 
@@ -202,7 +200,7 @@ public class User implements IDBRecord{
         ResultSet rs = null;
         try {
             conn = Utility.getConnection();
-            statement = conn.prepareStatement("Select username,name,role From user Where role=? ");
+            statement = conn.prepareStatement("Select username,name,role From user Where deleted=0 And role=? ");
             statement.setInt(1, role.getValue());
             rs = statement.executeQuery();
 
@@ -272,4 +270,8 @@ public class User implements IDBRecord{
        }
     }
     
+    @Override
+    public String toString() {
+        return this.username+" - "+this.name;
+    }
 }
