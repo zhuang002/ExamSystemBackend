@@ -15,11 +15,15 @@ import java.util.Date;
 import java.util.List;
 
 /**
- *
+ * The class representing an Exam.
  * @author Andy
  */
 public class Exam implements IDBRecord {
 
+    /**
+     * The static method to get all exams.
+     * @return A list of all Exams that has not been deleted.
+     */
     public static List<Exam> getAllExams() {
         ArrayList<Exam> arrayList = new ArrayList<>();
 
@@ -66,6 +70,12 @@ public class Exam implements IDBRecord {
         return arrayList;
     }
 
+    /**
+     * Get the available exams that the student can take. 
+     * The available exams including all undeleted exams that has not been taken by the student.
+     * @param user the student.
+     * @return A list of available exams for the student.
+     */
     public static List<Exam> getAllAvailableExams(User user) {
         ArrayList<Exam> arrayList = new ArrayList<>();
 
@@ -121,22 +131,42 @@ public class Exam implements IDBRecord {
     Duration timeLimit;
     //HashMap<Problem,Integer> scores=new HashMap<>();
 
+    /**
+     * Get the exam id.
+     * @return the integer representing the id of the exam.
+     */
     public int getID() {
         return ID;
     }
 
+    /**
+     * Get the description of the exam.
+     * @return The string describe the exam.
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * Set the description of the exam.
+     * @param description The description
+     */
     public void setDescription(String description) {
         this.description = description;
     }
 
+    /**
+     * Get the date of the exam. default is the date that the exam is created.
+     * @return the date of the exam.
+     */
     public Date getDateTime() {
         return dateTime;
     }
 
+    /**
+     * Set the date for the exam.
+     * @param dateTime The date of the exam. 
+     */
     public void setDateTime(Date dateTime) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         try {
@@ -148,18 +178,36 @@ public class Exam implements IDBRecord {
 
     }
 
+    /**
+     * Get the problems of the exam.
+     * @return A list of problems of the exam. The entry of the list is 
+     * ProblemScore which contains the problem with its assigned score for the exam.
+     */
     public List<ProblemScore> getProblems() {
         return this.problems;
     }
 
+    /**
+     * Get the time limit for the exam.
+     * @return the time limit for the exam.
+     */
     public Duration getTimeLimit() {
         return timeLimit;
     }
 
+    /**
+     * Set the time limit for the exam.
+     * @param timeLimit The time limit for the exam.
+     */
     public void setTimeLimit(Duration timeLimit) {
         this.timeLimit = timeLimit;
     }
 
+    /**
+     * The static method to find the exam by its ID.
+     * @param examID The exam ID
+     * @return The exam object. null if the examid does not exist.
+     */
     static Exam getExamByID(int examID) {
         Exam exam = new Exam();
         if (exam.get(examID)) {
@@ -170,6 +218,11 @@ public class Exam implements IDBRecord {
 
     }
 
+    /**
+     * The static method to remove an exam by its ID.
+     * @param id The exam ID.
+     * @return true if successful. false if unsuccessfull.
+     */
     public static boolean removeByID(int id) {
 
         Connection conn = null;
@@ -205,6 +258,10 @@ public class Exam implements IDBRecord {
 
     }
 
+    /**
+     * Create this exam in database.
+     * @return true if succeeds. false if fails.
+     */
     @Override
     public boolean create() {
 
@@ -265,6 +322,10 @@ public class Exam implements IDBRecord {
 
     }
 
+    /**
+     * Update this exam in database.
+     * @return true if succeeds. false if fails.
+     */
     @Override
     public boolean update() {
 
@@ -326,6 +387,10 @@ public class Exam implements IDBRecord {
         return true;
     }
 
+    /**
+     * Remove this exam form the database.
+     * @return true if succeeds. false if fails.
+     */
     @Override
     public boolean remove() {
 
@@ -333,6 +398,11 @@ public class Exam implements IDBRecord {
 
     }
 
+    /**
+     * Fill this exam object by retrieving from database with the exam ID.
+     * @param id the examID
+     * @return true if succeeds. false if fails.
+     */
     @Override
     public boolean get(int id) {
         Connection conn = null;
@@ -377,6 +447,13 @@ public class Exam implements IDBRecord {
         return true;
     }
 
+    /**
+     * Get all problems within the exam.
+     * @param id the exam id.
+     * @param conn a database connection to be used.
+     * @return a collection of ProblemScore which contains the problem and assigned score for the exam.
+     * @throws SQLException 
+     */
     private Collection<ProblemScore> getProblemsOfExam(int id, Connection conn) throws SQLException {
         PreparedStatement statement = conn.prepareStatement("Select problemid,score from exam_problem Where examid=? order by idx");
         statement.setInt(1, id);
